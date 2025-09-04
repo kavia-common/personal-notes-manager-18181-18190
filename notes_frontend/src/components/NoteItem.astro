@@ -1,0 +1,42 @@
+---
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  createdAt: number;
+  updatedAt: number;
+}
+// PUBLIC_INTERFACE
+export interface Props {
+  note: Note;
+}
+const { note } = Astro.props;
+---
+
+<article class="note-card" data-id={note.id}>
+  <div class="note-title">{note.title || "Untitled"}</div>
+  <div class="helper" style="font-size:12px;">
+    {new Date(note.updatedAt).toLocaleString()}
+  </div>
+  <div class="helper" style="white-space: pre-line;">{note.content.slice(0,160)}{note.content.length>160 ? '…' : ''}</div>
+  <div class="note-meta">
+    {note.tags.map(t => <span class="tag">{t}</span>)}
+  </div>
+  <div class="note-actions">
+    <button class="ghost" data-action="open">Open</button>
+    <button class="ghost" data-action="edit">Edit</button>
+    <button class="ghost" data-action="delete" style="background:#fff3f2;color:#b42318;">Delete</button>
+  </div>
+</article>
+
+<script>
+  const el = document.currentScript?.closest('[data-id]');
+  const id = el?.getAttribute('data-id');
+  el?.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.getAttribute('data-action');
+      window.dispatchEvent(new CustomEvent('notes:item-action', { detail: { id, action } }));
+    });
+  });
+</script>

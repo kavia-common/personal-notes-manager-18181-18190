@@ -1,0 +1,24 @@
+---
+// PUBLIC_INTERFACE
+export interface Props {
+  placeholder?: string;
+}
+const { placeholder = "Search notes..." } = Astro.props;
+---
+<div class="card" style="padding:12px;">
+  <div class="searchbar">
+    <input id="search-input" type="search" placeholder={placeholder} aria-label="Search notes" />
+    <button id="clear-search" class="ghost" aria-label="Clear search">Clear</button>
+  </div>
+</div>
+
+<script>
+  const input = document.getElementById('search-input');
+  const btn = document.getElementById('clear-search');
+  function emit() {
+    const ev = new CustomEvent('notes:search', { detail: { query: input.value } });
+    window.dispatchEvent(ev);
+  }
+  input?.addEventListener('input', emit);
+  btn?.addEventListener('click', () => { input.value=''; emit(); });
+</script>
