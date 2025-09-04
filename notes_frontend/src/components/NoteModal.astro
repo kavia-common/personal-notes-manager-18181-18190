@@ -1,0 +1,160 @@
+---
+import { createNote, updateNote } from '../lib/storage.js';
+---
+<div id="note-modal" class="modal" aria-hidden="true" aria-modal="true" role="dialog">
+  <div class="modal-content">
+    <div class="modal-header">
+      <strong id="modal-title">New Note</strong>
+      <div class="toolbar">
+        <button class="ghost" id="close-modal" aria-label="Close">Close</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="helper" style="margin-bottom:8px;">Fields marked with * are required.</div>
+      <div class="form-grid" style="display:grid; gap:12px;">
+        <div>
+          <label>Title *</label>
+          <input id="note-title" placeholder="Enter title" />
+        </div>
+        <div>
+          <label>Content</label>
+          <textarea id="note-content" rows="8" placeholder="Write your note..."></textarea>
+        </div>
+        <div>
+          <label>Tags</label>
+          <div class="chips" id="tags-area">
+            <input id="tag-input" class="chip-input" placeholder="Type and press Enter" />
+          </div>
+          <div class="helper">Use commas or Enter to add tags. Click a tag to remove.</div>
+        </div>
+      </div>
+      <hr class="sept" />
+      <div class="helper" id="meta"></div>
+    </div>
+    <div class="modal-footer">
+      <div class="toolbar">
+        <button id="save-note">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { createNote, updateNote } from '../lib/storage.js';
+
+  const modal = document.getElementById('note-modal');
+  const closeBtn = document.getElementById('close-modal');
+  const saveBtn = document.getElementById('save-note');
+  const titleEl = document.getElementById('note-title');
+  const contentEl = document.getElementById('note-content');
+  const tagInput = document.getElementById('tag-input');
+  const tagsArea = document.getElementById('tags-area');
+  const meta = document.getElementById('meta');
+  const modalTitle = document.getElementById('modal-title');
+
+  let current = null;
+  let mode = 'open';
+  let tags = [];
+
+  function openModal(note = null, m = 'open') {
+    current = note;
+    mode = m;
+    tags = Array.from(new Set((note?.tags || []).map(t => String(t).toLowerCase())));
+    titleEl.value = note?.title || '';
+    contentEl.value = note?.content || '';
+    renderTags();
+    meta.textContent = note ? `Last updated ${new Date(note.updatedAt).toLocaleString()}` : '';
+    modalTitle.textContent = note ? (m === 'edit' ? 'Edit Note' : 'View Note') : 'New Note';
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    titleEl.focus();
+    setEditable(m !== 'open');
+  }
+
+  function closeModal() {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    current = null;
+    mode = 'open';
+    tags = [];
+    titleEl.value = '';
+    contentEl.value = '';
+    renderTags();
+  }
+
+  function setEditable(editable) {
+    titleEl.readOnly = !editable && !!current;
+    contentEl.readOnly = !editable && !!current;
+    tagInput.disabled = !editable && !!current;
+    saveBtn.style.display = editable ? '' : 'none';
+  }
+
+  function addTagFromInput() {
+    const raw = (tagInput.value || '').trim();
+    if (!raw) return;
+    raw.split(',').forEach(t => {
+      const v = t.trim().toLowerCase();
+      if (v) tags.push(v);
+    });
+    tags = Array.from(new Set(tags));
+    tagInput.value = '';
+    renderTags();
+  }
+
+  function removeTag(value) {
+    tags = tags.filter(t => t !== value);
+    renderTags();
+  }
+
+  function renderTags() {
+    // remove all chip buttons except the input
+    Array.from(tagsArea.querySelectorAll('button[data-tag]')).forEach(b => b.remove());
+    tags.forEach(t => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ghost';
+      b.dataset.tag = t;
+      b.textContent = t;
+      b.addEventListener('click', () => removeTag(t));
+      tagsArea.insertBefore(b, tagInput);
+    });
+  }
+
+  function save() {
+    const title = (titleEl.value || '').trim();
+    if (!title) {
+      alert('Title is required.');
+      titleEl.focus();
+      return;
+    }
+    const payload = {
+      title,
+      content: (contentEl.value || '').trim(),
+      tags
+    };
+    if (current?.id) {
+      updateNote(current.id, payload);
+    } else {
+      createNote(payload);
+    }
+    window.dispatchEvent(new CustomEvent('notes:changed'));
+    closeModal();
+  }
+
+  // events
+  closeBtn?.addEventListener('click', closeModal);
+  saveBtn?.addEventListener('click', save);
+  tagInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addTagFromInput();
+    } else if (e.key === 'Backspace' && !tagInput.value && tags.length) {
+      // quick remove last
+      tags.pop();
+      renderTags();
+    }
+  });
+
+  window.addEventListener('notes:new', () => openModal(null, 'edit'));
+  window.addEventListener('notes:open', (e) => openModal(e.detail?.note, e.detail?.mode || 'open'));
+</script>

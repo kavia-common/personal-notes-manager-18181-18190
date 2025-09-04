@@ -1,11 +1,55 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import SearchBar from '../components/SearchBar.astro';
+import FilterBar from '../components/FilterBar.astro';
+import NoteList from '../components/NoteList.astro';
+import NoteModal from '../components/NoteModal.astro';
 ---
 
 <Layout>
-	<Welcome />
+  <fragment slot="header-actions">
+    <button id="quick-new" class="ghost">New</button>
+  </fragment>
+
+  <div class="main">
+    <section style="display:grid; gap:12px;">
+      <SearchBar />
+      <NoteList />
+    </section>
+    <aside class="sidebar card">
+      <div style="display:grid; gap:12px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div class="section-title">Filters</div>
+          <button id="clear-filters" class="ghost">Clear</button>
+        </div>
+        <FilterBar />
+        <div class="card" style="padding:12px; background: var(--bg-soft);">
+          <div class="section-title">Tips</div>
+          <ul style="margin:8px 0 0 16px; padding:0; color:var(--text-muted);">
+            <li>Use the search to find notes by title or content.</li>
+            <li>Filter by multiple tags at once.</li>
+            <li>Click a note to view, edit, or delete.</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <NoteModal />
 </Layout>
+
+<script>
+  // Quick new from header
+  document.getElementById('quick-new')?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('notes:new'));
+  });
+
+  // Clear filters helper: unpress all chips and reset list
+  document.getElementById('clear-filters')?.addEventListener('click', () => {
+    document.querySelectorAll('#tag-chips button[aria-pressed="true"]').forEach(b => {
+      b.setAttribute('aria-pressed', 'false');
+      b.classList.remove('active');
+    });
+    window.dispatchEvent(new CustomEvent('notes:filter', { detail: { tags: [] }}));
+  });
+</script>

@@ -1,0 +1,91 @@
+---
+import NoteItem from './NoteItem.astro';
+import { listNotes } from '../lib/storage.js';
+
+let notes = listNotes();
+---
+
+<section class="card" style="padding:14px;">
+  <div class="toolbar" style="justify-content: space-between; margin-bottom:10px;">
+    <span class="section-title">Notes</span>
+    <button id="add-note">New Note</button>
+  </div>
+  <div id="note-list" class="note-list">
+    {notes.map(n => <NoteItem note={n} />)}
+  </div>
+</section>
+
+<script>
+  import { searchNotes, listNotes, deleteNote, getNote } from '../lib/storage.js';
+
+  const listEl = document.getElementById('note-list');
+  const addBtn = document.getElementById('add-note');
+
+  function render(items) {
+    listEl.innerHTML = '';
+    items.forEach(n => {
+      const node = document.createElement('div');
+      node.innerHTML = `<article class="note-card" data-id="${n.id}">
+        <div class="note-title">${n.title || "Untitled"}</div>
+        <div class="helper" style="font-size:12px;">${new Date(n.updatedAt).toLocaleString()}</div>
+        <div class="helper" style="white-space: pre-line;">${(n.content || '').slice(0,160)}${(n.content || '').length>160 ? '…' : ''}</div>
+        <div class="note-meta">${(n.tags||[]).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        <div class="note-actions">
+          <button class="ghost" data-action="open">Open</button>
+          <button class="ghost" data-action="edit">Edit</button>
+          <button class="ghost" data-action="delete" style="background:#fff3f2;color:#b42318;">Delete</button>
+        </div>
+      </article>`;
+      listEl.appendChild(node.firstElementChild);
+    });
+    bindActions();
+  }
+
+  function bindActions() {
+    document.querySelectorAll('#note-list .note-card button[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.note-card');
+        const id = card?.getAttribute('data-id');
+        const action = btn.getAttribute('data-action');
+        if (action === 'delete' && id) {
+          const ok = confirm('Delete this note?');
+          if (ok) {
+            deleteNote(id);
+            refresh();
+          }
+        } else if ((action === 'open' || action === 'edit') && id) {
+          const note = getNote(id);
+          window.dispatchEvent(new CustomEvent('notes:open', { detail: { note, mode: action } }));
+        }
+      });
+    });
+  }
+
+  function refresh(query = '', tags = []) {
+    const items = searchNotes(query, tags);
+    render(items);
+  }
+
+  // Events
+  let currentQuery = '';
+  let currentTags = [];
+  window.addEventListener('notes:search', (e) => {
+    currentQuery = e.detail?.query || '';
+    refresh(currentQuery, currentTags);
+  });
+  window.addEventListener('notes:filter', (e) => {
+    currentTags = e.detail?.tags || [];
+    refresh(currentQuery, currentTags);
+  });
+  window.addEventListener('notes:changed', () => {
+    refresh(currentQuery, currentTags);
+  });
+
+  // Add
+  addBtn?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('notes:new'));
+  });
+
+  // Initial
+  render(listNotes());
+</script>

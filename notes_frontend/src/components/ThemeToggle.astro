@@ -1,5 +1,5 @@
 ---
-// ThemeToggle.astro - Component for switching between light and dark themes
+ // ThemeToggle.astro - Component for switching between light and dark themes
 ---
 
 <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">
@@ -15,84 +15,60 @@
 <style>
 	.theme-toggle {
 		position: fixed;
-		top: 20px;
-		right: 20px;
-		background: rgba(255, 255, 255, 0.9);
-		border: 1px solid rgba(0, 0, 0, 0.1);
-		border-radius: 50%;
-		width: 48px;
-		height: 48px;
+		top: 18px;
+		right: 18px;
+		background: rgba(255, 255, 255, 0.95);
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		width: 44px;
+		height: 44px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		transition: all 0.3s ease;
-		backdrop-filter: blur(10px);
+		transition: all 0.2s ease;
+		backdrop-filter: blur(6px);
 		z-index: 1000;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--shadow-sm);
+		color: var(--color-primary);
 	}
 
 	.theme-toggle:hover {
-		background: rgba(255, 255, 255, 1);
-		transform: scale(1.05);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow);
 	}
 
-	.theme-toggle .sun-icon {
-		display: block;
-		color: #f59e0b;
-	}
-
-	.theme-toggle .moon-icon {
-		display: none;
-		color: #6366f1;
-	}
+	.theme-toggle .sun-icon { display: block; color: var(--color-accent); }
+	.theme-toggle .moon-icon { display: none; color: var(--color-secondary); }
 
 	:global(body.dark-theme) .theme-toggle {
-		background: rgba(31, 41, 55, 0.9);
-		border-color: rgba(255, 255, 255, 0.2);
+		background: #1f2937;
+		border-color: rgba(255, 255, 255, 0.12);
+		color: #fff;
 	}
 
-	:global(body.dark-theme) .theme-toggle:hover {
-		background: rgba(31, 41, 55, 1);
-	}
-
-	:global(body.dark-theme) .theme-toggle .sun-icon {
-		display: none;
-	}
-
-	:global(body.dark-theme) .theme-toggle .moon-icon {
-		display: block;
-	}
+	:global(body.dark-theme) .theme-toggle .sun-icon { display: none; }
+	:global(body.dark-theme) .theme-toggle .moon-icon { display: block; }
 
 	@media (max-width: 768px) {
 		.theme-toggle {
-			top: 16px;
-			right: 16px;
-			width: 44px;
-			height: 44px;
+			top: 14px;
+			right: 14px;
+			width: 42px;
+			height: 42px;
 		}
 	}
 </style>
 
 <script>
-	// Theme toggle functionality
 	function initThemeToggle() {
 		const themeToggle = document.getElementById('theme-toggle');
 		const body = document.body;
-		
-		// Check for saved theme preference or default to light mode
 		const savedTheme = localStorage.getItem('theme') || 'light';
-		
-		// Apply the saved theme
-		if (savedTheme === 'dark') {
-			body.classList.add('dark-theme');
-		}
-		
-		// Toggle theme function
+		if (savedTheme === 'dark') body.classList.add('dark-theme');
+
 		function toggleTheme() {
 			const isDark = body.classList.contains('dark-theme');
-			
 			if (isDark) {
 				body.classList.remove('dark-theme');
 				localStorage.setItem('theme', 'light');
@@ -101,14 +77,8 @@
 				localStorage.setItem('theme', 'dark');
 			}
 		}
-		
-		// Add click event listener
-		if (themeToggle) {
-			themeToggle.addEventListener('click', toggleTheme);
-		}
+		themeToggle?.addEventListener('click', toggleTheme);
 	}
-	
-	// Initialize when DOM is loaded
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', initThemeToggle);
 	} else {

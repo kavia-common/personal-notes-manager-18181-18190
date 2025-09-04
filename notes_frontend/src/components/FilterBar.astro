@@ -1,0 +1,37 @@
+---
+import { getAllTags } from '../lib/storage.js';
+
+const tags = getAllTags();
+---
+<div class="card" style="padding:12px;">
+  <div class="toolbar">
+    <span class="section-title">Filter</span>
+    <div class="chips" id="tag-chips">
+      {tags.map(t => (
+        <button class="ghost" data-tag={t} aria-pressed="false">{t}</button>
+      ))}
+    </div>
+  </div>
+</div>
+
+<script>
+  const chips = document.querySelectorAll('#tag-chips button');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const pressed = chip.getAttribute('aria-pressed') === 'true';
+      chip.setAttribute('aria-pressed', String(!pressed));
+      chip.classList.toggle('active');
+      const activeTags = Array.from(document.querySelectorAll('#tag-chips button[aria-pressed="true"]'))
+        .map(b => b.dataset.tag);
+      const ev = new CustomEvent('notes:filter', { detail: { tags: activeTags }});
+      window.dispatchEvent(ev);
+    });
+  });
+</script>
+
+<style>
+  button.active {
+    background: var(--color-primary);
+    color: #fff;
+  }
+</style>
